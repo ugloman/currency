@@ -33,21 +33,21 @@ class CurrencyRates
      */
     public function getResultCurrencyRatesByDate(CurrencyRatesByDateDTO $ratesByDateDTO): CurrencyRatesByDateResponseDTO
     {
-//        $cacheResponse = $this->cache->getItem(md5(
-//                $ratesByDateDTO->date->format('d.m.Y') .
-//                $ratesByDateDTO->currencyCode .
-//                $ratesByDateDTO->baseCurrencyCode
-//            ));
-//        if ($cacheResponse->isHit()) {
-//            return $cacheResponse->get();
-//        }
+        $cacheResponse = $this->cache->getItem(md5(
+                $ratesByDateDTO->date->format('d.m.Y') .
+                $ratesByDateDTO->currencyCode .
+                $ratesByDateDTO->baseCurrencyCode
+            ));
+        if ($cacheResponse->isHit()) {
+            return $cacheResponse->get();
+        }
 
         $result = $this->getCurrencyRatesByDate($ratesByDateDTO);
 
-//        $cacheResponse->set($result);
-//        $cacheResponse->expiresAfter(DateInterval::createFromDateString('1 hour'));
-//        $this->cache->save($cacheResponse);
-//        $this->cache->commit();
+        $cacheResponse->set($result);
+        $cacheResponse->expiresAfter(DateInterval::createFromDateString('1 hour'));
+        $this->cache->save($cacheResponse);
+        $this->cache->commit();
 
         return $result;
     }
