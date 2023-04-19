@@ -1,0 +1,19 @@
+old_sound_rabbit_mq:
+    connections:
+        default:
+            url: '%env(RABBITMQ_URL)%'
+    producers:
+        xml_currency_rates:
+            connection:       default
+            exchange_options: { name: 'currency', type: topic }
+    consumers:
+        xml_currency_rates:
+            connection:       default
+            exchange_options: { name: 'currency', type: topic }
+            queue_options:
+                name: 'currency.xml_currency_rates'
+                routing_keys:
+                    - 'xml_currency_rates'
+            callback:  xml_currency_rates
+            qos_options : {prefetch_size: 0, prefetch_count: 20, global: false }
+            enable_logger : true

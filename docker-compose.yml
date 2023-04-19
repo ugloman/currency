@@ -1,0 +1,71 @@
+version: '3.7'
+services:
+  database:
+    image: 'postgres:15.2'
+    restart: on-failure
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_DB: currency
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: 123
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - net
+  nginx:
+    image: 'nginx:1.15.3-alpine'
+    ports:
+      - '127.0.0.1:80:80'
+    restart: on-failure
+    volumes:
+      - './:/usr/src/currency:delegated'
+      - './docker/hosts:/etc/nginx/conf.d/'
+    networks:
+      net:
+        aliases:
+          - currency.test
+    depends_on:
+      - php
+  php:
+    container_name: currency-php
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - './:/usr/src/currency:delegated'
+    restart: on-failure
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - net
+  rabbitmq:
+      image: rabbitmq:3-management-alpine
+      hostname: currency
+      networks:
+        - net
+  redis:
+    container_name: currency-redis
+    image: redis:5.0.5
+    networks:
+      - net
+  consumer:
+    build:
+      context: .
+      dockerfile: docker/consumer/Dockerfile
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+    restart: always
+    depends_on:
+      - rabbitmq
+    networks:
+      - net
+networks:
+  net:
+    driver: bridge
+volumes:
+  postgres-data:
