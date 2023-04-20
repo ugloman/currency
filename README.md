@@ -1,3 +1,6 @@
+## Description
+Сервис получения курсов и кросс-курсов валют с сайта Центрального банка Российской Федерации https://www.cbr.ru
+
 ## Requirements
 - Docker
 - Docker-compose
