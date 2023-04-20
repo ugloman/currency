@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Exception;
 
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Throwable;
 
 class DTOBadException extends BadRequestHttpException implements HttpExceptionInterface
 {
@@ -13,8 +15,8 @@ class DTOBadException extends BadRequestHttpException implements HttpExceptionIn
 
     public function __construct(
         string     $message = null,
-        \Throwable $previous = null,
-        int        $code = 400,
+        Throwable $previous = null,
+        int        $code = Response::HTTP_BAD_REQUEST,
         array      $headers = []
     ) {
         $this->headers = $headers;
@@ -25,12 +27,11 @@ class DTOBadException extends BadRequestHttpException implements HttpExceptionIn
 
     public function getStatusCode(): int
     {
-        return 400;
+        return Response::HTTP_BAD_REQUEST;
     }
 
     public function getHeaders(): array
     {
         return $this->headers;
     }
-
 }

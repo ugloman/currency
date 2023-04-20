@@ -8,16 +8,17 @@ namespace App\Controller;
 
 use App\DTO\CurrencyRatesByDateDTO;
 use App\DTO\CurrencyRatesByDateRequestDTO;
-use App\Service\CurrencyRates;
+use App\Service\CurrencyRateService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Throwable;
 
 class CurrencyController extends AbstractController
 {
     public function __construct(
-        private readonly CurrencyRates $getCurrencyRates
+        private readonly CurrencyRateService $currencyRateService
     ) {
     }
 
@@ -25,16 +26,15 @@ class CurrencyController extends AbstractController
     public function getCurrencyRatesByDate(CurrencyRatesByDateRequestDTO $currencyRatesByDateDTO): JsonResponse
     {
         try {
-            $result = $this->getCurrencyRates->getResultCurrencyRatesByDate(new CurrencyRatesByDateDTO(
+            $rateResponseDTO = $this->currencyRateService->getCurrencyRatesByDate(new CurrencyRatesByDateDTO(
                 $currencyRatesByDateDTO->date,
                 $currencyRatesByDateDTO->currencyCode,
                 $currencyRatesByDateDTO->baseCurrencyCode
             ));
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return new JsonResponse(['error' => $e->getMessage()], $e->getCode());
         }
 
-        return new JsonResponse($result, Response::HTTP_OK);
+        return new JsonResponse($rateResponseDTO, Response::HTTP_OK);
     }
-
 }

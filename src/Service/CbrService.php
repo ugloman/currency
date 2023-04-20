@@ -9,6 +9,7 @@ namespace App\Service;
 use Curl\Curl;
 use DateTime;
 use DOMDocument;
+use Exception;
 use OldSound\RabbitMqBundle\RabbitMq\ProducerInterface;
 use SimpleXMLElement;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,14 +26,14 @@ class CbrService
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function getXmlCurrencyRatesByDate(DateTime $date): SimpleXMLElement
     {
         $curl = new Curl();
         $xml = $curl->get(self::CBR_XML_URL, ['date_req' => $date->format('d.m.Y')]);
         if ($curl->error) {
-            throw new \Exception($curl->errorMessage, $curl->httpStatusCode);
+            throw new Exception($curl->errorMessage, $curl->httpStatusCode);
         }
 
         $this->validateXsd($xml);
@@ -49,7 +50,7 @@ class CbrService
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     private function validateXsd(SimpleXMLElement $xml): void
     {
@@ -66,8 +67,7 @@ class CbrService
             $errorMessage = implode(";", $errors);
             libxml_clear_errors();
 
-            throw new \Exception($errorMessage, Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new Exception($errorMessage, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
 }

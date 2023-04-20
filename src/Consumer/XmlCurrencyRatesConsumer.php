@@ -6,8 +6,9 @@ declare(strict_types=1);
 namespace App\Consumer;
 
 
-use App\Service\CurrencyRateSaver;
+use App\Service\CurrencyRateSaving;
 use Doctrine\ORM\EntityManagerInterface;
+use Exception;
 use OldSound\RabbitMqBundle\RabbitMq\ConsumerInterface;
 use PhpAmqpLib\Message\AMQPMessage;
 use Psr\Log\LoggerInterface;
@@ -15,7 +16,7 @@ use Psr\Log\LoggerInterface;
 class XmlCurrencyRatesConsumer implements ConsumerInterface
 {
     public function __construct(
-        private readonly CurrencyRateSaver      $currencyRateSaver,
+        private readonly CurrencyRateSaving     $currencyRateSaving,
         private readonly LoggerInterface        $logger,
         private readonly EntityManagerInterface $em
     ) {
@@ -23,15 +24,14 @@ class XmlCurrencyRatesConsumer implements ConsumerInterface
 
     public function execute(AMQPMessage $msg): void
     {
-       $currencyRates = json_decode($msg->body,true);
+       $currencyRates = json_decode($msg->body, true);
 
         try {
-            $this->currencyRateSaver->saveFromConsumer($currencyRates);
-        } catch (\Exception $e) {
+            $this->currencyRateSaving->saveFromConsumer($currencyRates);
+        } catch (Exception $e) {
             $this->logger->error($e->getMessage());
         }
 
         $this->em->clear();
     }
-
 }

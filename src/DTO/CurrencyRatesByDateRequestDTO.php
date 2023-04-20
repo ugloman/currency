@@ -14,7 +14,7 @@ use Throwable;
 
 class CurrencyRatesByDateRequestDTO implements RequestDTOInterface
 {
-    #[Assert\NotBlank(message: 'Необходимо заполнить атрибут date')]
+    #[Assert\NotBlank(message: 'Необходимо заполнить атрибут date в формате d.m.Y')]
     public readonly ?DateTime $date;
 
     #[Assert\Length(
@@ -41,5 +41,4 @@ class CurrencyRatesByDateRequestDTO implements RequestDTOInterface
             $this->date = null;
         }
     }
-
 }

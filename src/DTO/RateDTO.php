@@ -8,7 +8,7 @@ namespace App\DTO;
 
 use DateTime;
 
-class RateDataDTO
+class RateDTO
 {
     public readonly float $rate;
 
@@ -21,5 +21,4 @@ class RateDataDTO
         $this->rate = $rate;
         $this->cbrDate = $cbrDate;
     }
-
 }

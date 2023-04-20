@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repository;
 
 use App\Entity\CurrencyRate;
@@ -38,5 +40,4 @@ class CurrencyRateRepository extends ServiceEntityRepository
             $this->getEntityManager()->flush();
         }
     }
-
 }

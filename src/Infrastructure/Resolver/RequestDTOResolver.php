@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Infrastructure\Resolver;
 
 use App\Infrastructure\Exception\DTOBadException;
+use ReflectionClass;
+use ReflectionException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
@@ -18,16 +20,13 @@ class RequestDTOResolver implements ValueResolverInterface
     }
 
     /**
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function supports(ArgumentMetadata $argument): bool
     {
-        $reflection = new \ReflectionClass($argument->getType());
-        if ($reflection->implementsInterface(RequestDTOInterface::class)) {
-            return true;
-        }
+        $reflection = new ReflectionClass($argument->getType());
 
-        return false;
+        return $reflection->implementsInterface(RequestDTOInterface::class);
     }
 
     public function resolve(Request $request, ArgumentMetadata $argument): iterable
@@ -42,5 +41,4 @@ class RequestDTOResolver implements ValueResolverInterface
 
         yield $dto;
     }
-
 }

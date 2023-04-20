@@ -5,7 +5,7 @@ declare(strict_types=1);
 
 namespace App\DTO;
 
-use App\Service\CurrencyRates;
+use App\Service\CurrencyRateService;
 use Symfony\Component\Validator\Constraints as Assert;
 use DateTime;
 
@@ -28,11 +28,10 @@ class CurrencyRatesByDateDTO
     public function __construct(
         DateTime $date,
         string   $currencyCode,
-        ?string  $baseCurrencyCode
+        ?string  $baseCurrencyCode = null
     ) {
         $this->date = $date;
         $this->currencyCode = mb_strtoupper($currencyCode);
-        $this->baseCurrencyCode = mb_strtoupper($baseCurrencyCode ?: CurrencyRates::DEFAULT_CODE_BASE_CURRENCY);
+        $this->baseCurrencyCode = mb_strtoupper($baseCurrencyCode ?: CurrencyRateService::DEFAULT_CODE_BASE_CURRENCY);
     }
-
 }

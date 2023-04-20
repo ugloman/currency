@@ -8,16 +8,17 @@ namespace App\Service;
 
 use App\DTO\CurrencyRatesByDateDTO;
 use App\DTO\CurrencyRatesByDateResponseDTO;
-use App\DTO\RateDataDTO;
+use App\DTO\RateDTO;
 use App\Repository\CurrencyRateRepository;
 use DateInterval;
 use DateTime;
 use Exception;
+use Psr\Cache\InvalidArgumentException;
 use SimpleXMLElement;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Contracts\Cache\CacheInterface;
 
-class CurrencyRates
+class CurrencyRateService
 {
     public const DEFAULT_CODE_BASE_CURRENCY = 'RUR';
 
@@ -29,56 +30,56 @@ class CurrencyRates
     }
 
     /**
-     * @throws \Exception|\Psr\Cache\InvalidArgumentException
+     * @throws Exception|InvalidArgumentException
      */
-    public function getResultCurrencyRatesByDate(CurrencyRatesByDateDTO $ratesByDateDTO): CurrencyRatesByDateResponseDTO
+    public function getCurrencyRatesByDate(CurrencyRatesByDateDTO $ratesByDateDTO): CurrencyRatesByDateResponseDTO
     {
         $cacheResponse = $this->cache->getItem(md5(
-                $ratesByDateDTO->date->format('d.m.Y') .
-                $ratesByDateDTO->currencyCode .
-                $ratesByDateDTO->baseCurrencyCode
-            ));
+            $ratesByDateDTO->date->format('d.m.Y')
+            . $ratesByDateDTO->currencyCode
+            . $ratesByDateDTO->baseCurrencyCode
+        ));
         if ($cacheResponse->isHit()) {
             return $cacheResponse->get();
         }
 
-        $result = $this->getCurrencyRatesByDate($ratesByDateDTO);
+        $rateResponseDTO = $this->getRateResponseDTO($ratesByDateDTO);
 
-        $cacheResponse->set($result);
+        $cacheResponse->set($rateResponseDTO);
         $cacheResponse->expiresAfter(DateInterval::createFromDateString('1 hour'));
         $this->cache->save($cacheResponse);
         $this->cache->commit();
 
-        return $result;
+        return $rateResponseDTO;
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
-    private function getCurrencyRatesByDate(CurrencyRatesByDateDTO $ratesByDateDTO): CurrencyRatesByDateResponseDTO
+    private function getRateResponseDTO(CurrencyRatesByDateDTO $ratesByDateDTO): CurrencyRatesByDateResponseDTO
     {
-        $rateDataDTO = $this->getCurrencyRate($ratesByDateDTO->date, $ratesByDateDTO->currencyCode);
-        $rate = $rateDataDTO->rate;
+        $rateDTO = $this->getCbrCurrencyRate($ratesByDateDTO->date, $ratesByDateDTO->currencyCode);
+        $rate = $rateDTO->rate;
 
-        $previousDayCbr = $rateDataDTO->cbrDate->modify('-1 day');
-        $ratePreviousDayDataDTO = $this->getCurrencyRate($previousDayCbr, $ratesByDateDTO->currencyCode);
-        $ratePreviousDay = $ratePreviousDayDataDTO->rate;
+        $previousDayCbr = $rateDTO->cbrDate->modify('-1 day');
+        $rateDTOByPreviousDay = $this->getCbrCurrencyRate($previousDayCbr, $ratesByDateDTO->currencyCode);
+        $ratePreviousDay = $rateDTOByPreviousDay->rate;
 
         if ($ratesByDateDTO->baseCurrencyCode !== self::DEFAULT_CODE_BASE_CURRENCY) {
-            $baseRateDataDTO = $this->getCurrencyRate($ratesByDateDTO->date, $ratesByDateDTO->baseCurrencyCode);
-            $baseRatePreviousDayDataDTO = $this->getCurrencyRate($previousDayCbr, $ratesByDateDTO->baseCurrencyCode);
+            $baseRateDTO = $this->getCbrCurrencyRate($ratesByDateDTO->date, $ratesByDateDTO->baseCurrencyCode);
+            $baseRateDTOByPreviousDay = $this->getCbrCurrencyRate($previousDayCbr, $ratesByDateDTO->baseCurrencyCode);
 
-            $rate /= $baseRateDataDTO->rate;
-            $ratePreviousDay /= $baseRatePreviousDayDataDTO->rate;
+            $rate /= $baseRateDTO->rate;
+            $ratePreviousDay /= $baseRateDTOByPreviousDay->rate;
         }
 
         return new CurrencyRatesByDateResponseDTO($rate, $rate - $ratePreviousDay);
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
-    private function getCurrencyRate(DateTime $date, string $currencyCode): RateDataDTO
+    private function getCbrCurrencyRate(DateTime $date, string $currencyCode): RateDTO
     {
         $currencyRate = $this->currencyRateRepository->findOneBy([
             'code' => $currencyCode,
@@ -86,7 +87,7 @@ class CurrencyRates
         ]);
 
         if ($currencyRate !== null) {
-            return new RateDataDTO(
+            return new RateDTO(
                 $currencyRate->rate,
                 $currencyRate->dateCbr
             );
@@ -98,7 +99,7 @@ class CurrencyRates
         $currencyRateXmlValue = (float)str_replace(',', '.', (string)$rateXml->Value);
         $currencyRateXmlNominal = (int)$rateXml->Nominal;
 
-        return new RateDataDTO(
+        return new RateDTO(
             $currencyRateXmlValue / $currencyRateXmlNominal,
             new DateTime((string)$cbrXml['Date'])
         );
@@ -112,19 +113,18 @@ class CurrencyRates
         $currencyRateXml = $cbrXml->xpath("//Valute[CharCode='{$currencyCode}']");
         if ($currencyRateXml === null || $currencyRateXml === false) {
             throw new Exception(
-                sprintf('В цбр на эту дату нет валюты %s', $currencyCode),
+                sprintf('На cbr.ru нет валюты %s на указанную дату', $currencyCode),
                 Response::HTTP_BAD_REQUEST
             );
         }
 
         if (!isset($currencyRateXml[0])) {
             throw new Exception(
-                sprintf('В цбр на эту дату нет валюты %s', $currencyCode),
+                sprintf('На cbr.ru нет валюты %s на указанную дату', $currencyCode),
                 Response::HTTP_BAD_REQUEST
             );
         }
 
         return $currencyRateXml[0];
     }
-
 }

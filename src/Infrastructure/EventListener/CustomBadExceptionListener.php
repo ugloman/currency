@@ -16,15 +16,12 @@ class CustomBadExceptionListener
         $exception = $event->getThrowable();
 
         if ($exception instanceof DTOBadException) {
-
-            $code = $exception->getCode();
             $messageString = trim($exception->getMessage());
             $messageArray = preg_split('~\r\n|\r|\n~', $messageString);
             $data = ['errors' => $messageArray];
-            $jsonResponse = new JsonResponse($data, $code);
+            $jsonResponse = new JsonResponse($data, $exception->getCode());
 
             $event->setResponse($jsonResponse);
         }
     }
-
 }
