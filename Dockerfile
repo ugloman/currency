@@ -25,8 +25,6 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 COPY . /usr/src/currency
 
-RUN composer install
-
 COPY docker/bin/entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint.sh
 ENTRYPOINT ["entrypoint.sh"]
